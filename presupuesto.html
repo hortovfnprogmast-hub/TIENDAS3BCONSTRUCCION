@@ -1,0 +1,788 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Presupuesto | TIENDAS 3B CONSTRUCCIÓN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <style>
+        :root { --primary-blue: #FB0317; --primary-dark: #B80114; --light-blue: #fee2e2; --bg-color: #f8fafc; --text-main: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0; --danger: #dc2626; --success: #10b981; --warning: #f59e0b; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid var(--border-color); z-index: 50; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .menu-btn { background: none; border: none; cursor: pointer; color: var(--text-main); }
+        .header-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--primary-blue); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-initial { width: 35px; height: 35px; border-radius: 50%; background-color: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 260px; background: white; border-right: 1px solid var(--border-color); overflow-y: auto; transition: transform 0.3s ease; display: flex; flex-direction: column; position: fixed; height: calc(100vh - 60px); z-index: 40; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+        .content { flex: 1; padding: 20px; overflow-y: auto; margin-left: 0; width: 100%; }
+        @media (min-width: 769px) { .content { margin-left: 260px; } }
+        .container { max-width: 1600px; margin: 0 auto; padding-bottom: 40px; }
+
+        /* Toolbar */
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 15px; }
+        .toolbar select, .toolbar button { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-color); font-family: 'Inter', sans-serif; }
+        .toolbar select { background: white; color: var(--text-main); flex: 1; min-width: 250px; }
+        .btn-primary { background: var(--primary-blue); color: white; border: none !important; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: white; color: var(--text-main); }
+        .btn-secondary:hover { background: var(--bg-color); }
+        .btn-success { background: var(--success); color: white; border: none !important; }
+
+        /* KPIs bar */
+        .kpi-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .kpi-mini { background: white; border-radius: 12px; padding: 14px 16px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-blue); }
+        .kpi-mini .label { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .kpi-mini .value { font-size: 18px; color: var(--text-main); font-weight: 800; margin-top: 4px; }
+        .kpi-mini.paid { border-left-color: var(--success); }
+        .kpi-mini.paid .value { color: var(--success); }
+        .kpi-mini.rest { border-left-color: var(--warning); }
+        .kpi-mini.rest .value { color: var(--warning); }
+        .kpi-mini.adv { border-left-color: var(--primary-blue); }
+        .kpi-mini.adv .value { color: var(--primary-blue); }
+
+        /* Table */
+        .table-wrap { background: white; border-radius: 12px; border: 1px solid var(--border-color); overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        table.cat { width: 100%; border-collapse: collapse; min-width: 1400px; }
+        table.cat thead { background: var(--primary-blue); position: sticky; top: 0; z-index: 5; }
+        table.cat th { color: white; padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; text-align: center; }
+        table.cat td { padding: 6px 8px; font-size: 12px; color: var(--text-main); border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        table.cat tr.header-row { background: var(--light-blue); }
+        table.cat tr.header-row td { font-weight: 800; color: var(--primary-blue); text-transform: uppercase; font-size: 12px; }
+        table.cat tr.concept-row:hover { background: #fff5f5; }
+        table.cat input[type="number"], table.cat input[type="text"] { width: 100%; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; font-family: inherit; }
+        table.cat input:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 2px rgba(251,3,23,0.1); }
+        table.cat input.readonly { background: #f8fafc; color: var(--text-muted); }
+        table.cat .col-codigo { width: 100px; font-weight: 600; }
+        table.cat .col-concepto { min-width: 300px; text-align: left; }
+        table.cat .col-unidad { width: 70px; text-align: center; }
+        table.cat .col-num { width: 90px; text-align: right; }
+        table.cat .col-acciones { width: 140px; text-align: center; white-space: nowrap; }
+        .btn-icon { background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-main); display: inline-flex; align-items: center; gap: 4px; margin: 0 2px; }
+        .btn-icon:hover { background: var(--light-blue); border-color: var(--primary-blue); color: var(--primary-blue); }
+        .btn-icon.danger:hover { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+        .btn-icon i { width: 14px; height: 14px; }
+        .photo-count { display: inline-block; background: var(--primary-blue); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+
+        /* CSV import modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: white; border-radius: 16px; padding: 30px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-box h2 { margin: 0 0 15px 0; font-size: 20px; color: var(--primary-blue); }
+        .modal-box p { color: var(--text-muted); font-size: 14px; margin: 0 0 15px 0; line-height: 1.5; }
+        .modal-box .format-example { background: var(--bg-color); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; color: var(--text-muted); margin: 10px 0; white-space: pre-wrap; }
+        .modal-box textarea { width: 100%; min-height: 150px; padding: 12px; border: 2px dashed var(--border-color); border-radius: 8px; font-family: monospace; font-size: 12px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+        /* Timeline overlay */
+        #timeline-overlay { display: none; position: fixed !important; z-index: 999999 !important; inset: 0 !important; background: rgba(0,0,0,0.97) !important; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        #timeline-overlay.show { display: flex !important; }
+        .tl-header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .tl-title { color: white; font-size: 18px; font-weight: 700; }
+        .tl-title .code { color: #FB0317; }
+        .tl-close { background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 20px; }
+        .tl-close:hover { background: rgba(255,255,255,0.3); }
+        .tl-nav { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tl-nav button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+        .tl-nav .tl-prev { background: rgba(255,255,255,0.15); color: white; }
+        .tl-nav .tl-next { background: rgba(255,255,255,0.15); color: white; }
+        .tl-nav .tl-add { background: var(--success); color: white; }
+        .tl-nav .tl-camera { background: var(--primary-blue); color: white; }
+        .tl-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .tl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 900px; width: 100%; }
+        .tl-photo { background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; position: relative; aspect-ratio: 4/3; }
+        .tl-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .tl-photo .date { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; font-size: 11px; padding: 6px 10px; text-align: center; }
+        .tl-photo .actions { position: absolute; top: 5px; right: 5px; display: flex; gap: 4px; }
+        .tl-photo .actions button { background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+        .tl-photo .actions button:hover { background: var(--primary-blue); }
+        .tl-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 60px 20px; font-size: 16px; }
+        .tl-counter { color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 10px; }
+
+        /* Camera overlay */
+        #camera-overlay { display: none; position: fixed !important; z-index: 999999 !important; inset: 0 !important; background: rgba(0,0,0,0.95) !important; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #camera-overlay.show { display: flex !important; }
+        #camera-stream { width: 100%; max-width: 600px; aspect-ratio: 4/3; background: black; border-radius: 12px; overflow: hidden; }
+        #camera-video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Alert */
+        #custom-alert { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
+        .modal-card-alert { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 400px; text-align: center; }
+        #alert-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; color: white; background: var(--primary-blue); font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 15px; }
+
+        @media (max-width: 768px) {
+            .content { padding: 15px; }
+            .kpi-bar { grid-template-columns: repeat(2, 1fr); }
+            .kpi-mini .value { font-size: 14px; }
+            .tl-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="toggle-menu"><i data-lucide="menu"></i></button>
+            <img src="https://i.ibb.co/7JHb6tGr/LOGOTIPO-TIENDES-3-B.jpg" alt="Logo TIENDAS 3B CONSTRUCCIÓN" style="height: 35px; object-fit: contain;">
+            <h1 class="header-title">Presupuesto / Catálogo de Obra</h1>
+        </div>
+        <div class="header-right">
+            <span style="font-weight: 700; color: var(--primary-blue); font-size: 14px;" id="header-username">Cargando...</span>
+            <div class="user-initial" id="user-initial">U</div>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <main class="content">
+            <div class="container">
+                <div class="toolbar">
+                    <select id="proyecto-select">
+                        <option value="">Selecciona un proyecto...</option>
+                    </select>
+                    <button class="btn-secondary" onclick="abrirImportCSV()"><i data-lucide="upload"></i> Importar CSV</button>
+                    <button class="btn-secondary" onclick="agregarFila('concepto')"><i data-lucide="plus"></i> Agregar Concepto</button>
+                    <button class="btn-secondary" onclick="agregarFila('header')"><i data-lucide="folder"></i> Agregar Partida</button>
+                    <button class="btn-primary" onclick="guardarCatalogo()"><i data-lucide="save"></i> Guardar</button>
+                </div>
+
+                <div class="kpi-bar">
+                    <div class="kpi-mini"><div class="label">Presupuesto Total</div><div class="value" id="kpi-total">$0.00</div></div>
+                    <div class="kpi-mini paid"><div class="label">Pagado Total</div><div class="value" id="kpi-paid">$0.00</div></div>
+                    <div class="kpi-mini rest"><div class="label">Restante Total</div><div class="value" id="kpi-rest">$0.00</div></div>
+                    <div class="kpi-mini adv"><div class="label">% Avance Total</div><div class="value" id="kpi-adv">0%</div></div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="cat">
+                        <thead>
+                            <tr>
+                                <th class="col-codigo">Código</th>
+                                <th class="col-concepto">Concepto</th>
+                                <th class="col-unidad">Unidad</th>
+                                <th class="col-num">Cantidad</th>
+                                <th class="col-num">P.U.</th>
+                                <th class="col-num">Importe</th>
+                                <th class="col-num">Avance %</th>
+                                <th class="col-num">Importe Pagado</th>
+                                <th class="col-num">Diferencia</th>
+                                <th class="col-num">Avance Real %</th>
+                                <th>Observaciones</th>
+                                <th class="col-acciones">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cat">
+                            <tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-muted);">Selecciona un proyecto para cargar o crear el catálogo de obra.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CSV Import Modal -->
+    <div class="modal-overlay" id="csv-modal">
+        <div class="modal-box">
+            <h2>Importar Catálogo desde CSV</h2>
+            <p>Pega aquí el contenido de tu archivo CSV (delimitado por comas). Las filas cuyo código sea PRE, DES, DEM, TER, CIM, EST, ALB, ACA, HER, CAN, CAR, ALU, ELEC, CCTV, VEN, IHS, VAR, EXT o LIM se crearán automáticamente como encabezados de partida.</p>
+            <div class="format-example">Formato esperado (con encabezado):
+Código,Concepto,Unidad,Cantidad,P.U.,Observaciones
+PRE,Preeliminares,,,
+T - PRE 01,Trazo y nivelación manual...,M2,340,12.49,
+T - PRE 02,Trazo y nivelación con equipo topográfico...,M2,340,12.49,
+DES,Desmontajes,,,</div>
+            <textarea id="csv-textarea" placeholder="Código,Concepto,Unidad,Cantidad,P.U.,Observaciones&#10;PRE,Preeliminares,,,&#10;T - PRE 01,Trazo y nivelación...,M2,340,12.49,"></textarea>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="cerrarImportCSV()">Cancelar</button>
+                <button class="btn-primary" onclick="procesarCSV()"><i data-lucide="check"></i> Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Overlay -->
+    <div id="timeline-overlay">
+        <div class="tl-header">
+            <div class="tl-title" id="tl-title">Línea de tiempo - <span class="code" id="tl-code"></span></div>
+            <button class="tl-close" onclick="cerrarTimeline()">&times;</button>
+        </div>
+        <div class="tl-counter" id="tl-counter"></div>
+        <div class="tl-nav">
+            <button class="tl-prev" id="tl-prev" onclick="navegarTimeline(-1)"><i data-lucide="chevron-left"></i> Anteriores</button>
+            <button class="tl-next" id="tl-next" onclick="navegarTimeline(1)">Siguientes <i data-lucide="chevron-right"></i></button>
+            <button class="tl-add" onclick="agregarFotoTimeline()"><i data-lucide="upload"></i> Agregar Foto</button>
+            <button class="tl-camera" onclick="tomarFotoTimeline()"><i data-lucide="camera"></i> Tomar Foto</button>
+        </div>
+        <div class="tl-grid" id="tl-grid"></div>
+    </div>
+
+    <!-- Camera Overlay -->
+    <div id="camera-overlay">
+        <div id="camera-stream"><video id="camera-video" autoplay="true" playsinline></video></div>
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button onclick="closeCamera()" style="padding:10px 20px;border-radius:6px;border:1px solid #d1d5db;background:white;cursor:pointer;font-weight:bold;color:#000;">Cerrar</button>
+            <button onclick="switchCamera()" style="padding:10px 20px;border-radius:6px;border:1px solid #d1d5db;background:#f3f4f6;cursor:pointer;font-weight:bold;color:#000;"><i data-lucide="refresh-cw"></i> Girar</button>
+            <button onclick="captureFotoTimeline()" style="padding:10px 20px;border-radius:6px;background:#FB0317;color:white;border:none;cursor:pointer;font-weight:bold;">Capturar</button>
+        </div>
+    </div>
+
+    <!-- Custom Alert -->
+    <div id="custom-alert">
+        <div class="modal-card-alert">
+            <h3 id="alert-title" style="margin:0 0 8px 0;font-size:18px;color:var(--text-main);font-weight:700;"></h3>
+            <p id="alert-msg" style="margin:0 0 24px 0;font-size:14px;color:var(--text-muted);"></p>
+            <button id="alert-btn" onclick="document.getElementById('custom-alert').style.display='none'">Aceptar</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInputCSV" accept=".csv" style="display:none">
+    <input type="file" id="fileInputPhoto" accept="image/*" style="display:none">
+    <canvas id="tempCanvas" style="display:none"></canvas>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXPqr6ywkiUnmlJMDx8hRRIeV2_KmKIKk",
+            authDomain: "tiendas3bconstruccion.firebaseapp.com",
+            projectId: "tiendas3bconstruccion",
+            storageBucket: "tiendas3bconstruccion.firebasestorage.app",
+            messagingSenderId: "73269068249",
+            appId: "1:73269068249:web:5669f3bcc9adeae459d9c8"
+        };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        const HEADER_CODES = ['PRE','DES','DEM','TER','CIM','EST','ALB','ACA','HER','CAN','CAR','ALU','ELEC','CCTV','VEN','IHS','VAR','EXT','LIM'];
+        let proyectosCache = {};
+        let proyectoActual = '';
+        let conceptos = [];
+        let fotosCache = {};
+        let timelineConcepto = null;
+        let timelineIdx = 0;
+        let currentFacingMode = 'environment';
+        let currentStream;
+        let photoCallbackMode = null;
+
+        function configurarPermisosMenu() {
+            const privilegio = localStorage.getItem('privilegio');
+            const m1 = document.getElementById('menu-mis-reportes');
+            const m2 = document.getElementById('menu-administracion');
+            const m3 = document.getElementById('menu-reportes-compania');
+            if (privilegio === '1') {
+                if(m1) m1.style.display = 'none';
+                if(m2) m2.style.display = 'block';
+                if(m3) m3.style.display = 'block';
+            } else {
+                if(m1) m1.style.display = 'block';
+                if(m2) m2.style.display = 'none';
+                if(m3) m3.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if(!localStorage.getItem('usuario')) { window.location.href = 'index.html'; return; }
+            const nombre = localStorage.getItem('nombre') || 'Usuario';
+            document.getElementById('user-initial').innerText = nombre.charAt(0).toUpperCase();
+            document.getElementById('header-username').innerText = nombre;
+
+            fetch('menu.html?v=12').then(res => res.text()).then(html => {
+                document.getElementById('sidebar').innerHTML = html;
+                configurarPermisosMenu();
+                lucide.createIcons();
+                document.getElementById('link-presupuesto')?.classList.add('active');
+            });
+            document.getElementById('toggle-menu').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+            await cargarProyectos();
+            lucide.createIcons();
+        });
+
+        function showAlert(t, m) {
+            document.getElementById('alert-title').innerText = t;
+            document.getElementById('alert-msg').innerText = m;
+            document.getElementById('custom-alert').style.display = 'flex';
+        }
+
+        async function cargarProyectos() {
+            try {
+                const snap = await db.collection("proyectos").get();
+                const select = document.getElementById('proyecto-select');
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    proyectosCache[doc.id] = p;
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.innerText = p.proyecto || 'Sin nombre';
+                    select.appendChild(option);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        document.getElementById('proyecto-select').addEventListener('change', async function() {
+            proyectoActual = this.value;
+            if (proyectoActual) {
+                await cargarCatalogo();
+                await cargarFotos();
+            } else {
+                conceptos = [];
+                renderTabla();
+            }
+        });
+
+        async function cargarCatalogo() {
+            try {
+                const doc = await db.collection("proyectos").doc(proyectoActual).get();
+                if (doc.exists && doc.data().presupuesto_conceptos) {
+                    conceptos = doc.data().presupuesto_conceptos;
+                } else {
+                    conceptos = [];
+                }
+                renderTabla();
+            } catch (e) { console.error(e); conceptos = []; renderTabla(); }
+        }
+
+        async function cargarFotos() {
+            fotosCache = {};
+            try {
+                const snap = await db.collection("proyectos").doc(proyectoActual)
+                    .collection("presupuesto_fotos").get();
+                snap.forEach(doc => {
+                    fotosCache[doc.id] = doc.data().fotos || [];
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function renderTabla() {
+            const tbody = document.getElementById('tabla-cat');
+            tbody.innerHTML = '';
+            if (conceptos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-muted);">No hay conceptos. Importa un CSV o agrega filas manualmente.</td></tr>`;
+                actualizarKPIs();
+                return;
+            }
+            conceptos.forEach((c, idx) => {
+                const tr = document.createElement('tr');
+                if (c.tipo === 'header') {
+                    tr.className = 'header-row';
+                    tr.innerHTML = `
+                        <td><input type="text" value="${c.codigo||''}" onchange="updateCampo(${idx},'codigo',this.value)"></td>
+                        <td colspan="10"><input type="text" value="${c.concepto||''}" onchange="updateCampo(${idx},'concepto',this.value)" style="font-weight:800;"></td>
+                        <td class="col-acciones"><button class="btn-icon danger" onclick="eliminarFila(${idx})"><i data-lucide="trash-2"></i></button></td>
+                    `;
+                } else {
+                    const importe = (parseFloat(c.cantidad)||0) * (parseFloat(c.pu)||0);
+                    const pagado = parseFloat(c.importe_pagado)||0;
+                    const diferencia = importe - pagado;
+                    const fotoCount = fotosCache[c.codigo] ? fotosCache[c.codigo].length : 0;
+                    tr.className = 'concept-row';
+                    tr.innerHTML = `
+                        <td class="col-codigo"><input type="text" value="${c.codigo||''}" onchange="updateCampo(${idx},'codigo',this.value)"></td>
+                        <td class="col-concepto"><input type="text" value="${c.concepto||''}" onchange="updateCampo(${idx},'concepto',this.value)"></td>
+                        <td class="col-unidad"><input type="text" value="${c.unidad||''}" onchange="updateCampo(${idx},'unidad',this.value)" style="text-align:center;"></td>
+                        <td class="col-num"><input type="number" step="0.01" value="${c.cantidad||''}" onchange="updateCampo(${idx},'cantidad',this.value)" style="text-align:right;"></td>
+                        <td class="col-num"><input type="number" step="0.01" value="${c.pu||''}" onchange="updateCampo(${idx},'pu',this.value)" style="text-align:right;"></td>
+                        <td class="col-num"><input type="text" value="${formatMoney(importe)}" readonly class="readonly" style="text-align:right;"></td>
+                        <td class="col-num"><input type="number" min="0" max="100" value="${c.avance||''}" onchange="updateCampo(${idx},'avance',this.value)" style="text-align:right;"></td>
+                        <td class="col-num"><input type="number" step="0.01" value="${c.importe_pagado||''}" onchange="updateCampo(${idx},'importe_pagado',this.value)" style="text-align:right;"></td>
+                        <td class="col-num"><input type="text" value="${formatMoney(diferencia)}" readonly class="readonly" style="text-align:right;color:${diferencia<0?'var(--danger)':'var(--text-muted)'};"></td>
+                        <td class="col-num"><input type="number" min="0" max="100" value="${c.avance_real||''}" onchange="updateCampo(${idx},'avance_real',this.value)" style="text-align:right;"></td>
+                        <td><input type="text" value="${c.observaciones||''}" onchange="updateCampo(${idx},'observaciones',this.value)"></td>
+                        <td class="col-acciones">
+                            <button class="btn-icon" onclick="abrirTimeline('${c.codigo}')" title="Ver línea de tiempo"><i data-lucide="image"></i> ${fotoCount>0?`<span class="photo-count">${fotoCount}</span>`:''}</button>
+                            <button class="btn-icon" onclick="agregarFotoDirecto('${c.codigo}')" title="Agregar foto"><i data-lucide="camera"></i></button>
+                            <button class="btn-icon danger" onclick="eliminarFila(${idx})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+                        </td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+            actualizarKPIs();
+        }
+
+        function updateCampo(idx, campo, valor) {
+            if (!conceptos[idx]) return;
+            conceptos[idx][campo] = valor;
+            if (campo === 'cantidad' || campo === 'pu' || campo === 'importe_pagado' || campo === 'avance' || campo === 'avance_real') {
+                renderTabla();
+            }
+        }
+
+        function agregarFila(tipo) {
+            if (!proyectoActual) { showAlert('Atención', 'Selecciona un proyecto primero.'); return; }
+            const nuevoIdx = conceptos.length;
+            conceptos.push({
+                tipo: tipo,
+                codigo: '',
+                concepto: '',
+                unidad: '',
+                cantidad: '',
+                pu: '',
+                avance: '',
+                importe_pagado: '',
+                avance_real: '',
+                observaciones: ''
+            });
+            renderTabla();
+            // Scroll to new row
+            setTimeout(() => {
+                const tbody = document.getElementById('tabla-cat');
+                tbody.scrollTop = tbody.scrollHeight;
+                const inputs = tbody.querySelectorAll('tr');
+                if (inputs[nuevoIdx]) {
+                    const firstInput = inputs[nuevoIdx].querySelector('input');
+                    if (firstInput) firstInput.focus();
+                }
+            }, 100);
+        }
+
+        function eliminarFila(idx) {
+            if (!confirm('¿Eliminar esta fila?')) return;
+            conceptos.splice(idx, 1);
+            renderTabla();
+        }
+
+        function actualizarKPIs() {
+            let total = 0, pagado = 0, avanceSum = 0, avanceCount = 0;
+            conceptos.forEach(c => {
+                if (c.tipo !== 'header') {
+                    const importe = (parseFloat(c.cantidad)||0) * (parseFloat(c.pu)||0);
+                    total += importe;
+                    pagado += parseFloat(c.importe_pagado)||0;
+                    const ar = parseFloat(c.avance_real);
+                    if (!isNaN(ar)) { avanceSum += ar; avanceCount++; }
+                }
+            });
+            const rest = total - pagado;
+            const avgAdv = avanceCount > 0 ? (avanceSum / conceptos.filter(c=>c.tipo!=='header').length) : 0;
+            document.getElementById('kpi-total').innerText = formatMoney(total);
+            document.getElementById('kpi-paid').innerText = formatMoney(pagado);
+            document.getElementById('kpi-rest').innerText = formatMoney(rest);
+            document.getElementById('kpi-adv').innerText = avgAdv.toFixed(1) + '%';
+        }
+
+        function formatMoney(n) {
+            return '$' + (n||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+
+        async function guardarCatalogo() {
+            if (!proyectoActual) { showAlert('Atención', 'Selecciona un proyecto.'); return; }
+            try {
+                await db.collection("proyectos").doc(proyectoActual).update({
+                    presupuesto_conceptos: conceptos,
+                    presupuesto_fecha_actualizacion: new Date().toISOString()
+                });
+                showAlert('Éxito', 'Catálogo guardado correctamente.');
+            } catch (e) {
+                showAlert('Error', 'No se pudo guardar: ' + e.message);
+            }
+        }
+
+        // CSV Import
+        function abrirImportCSV() {
+            if (!proyectoActual) { showAlert('Atención', 'Selecciona un proyecto primero.'); return; }
+            document.getElementById('csv-modal').classList.add('show');
+            lucide.createIcons();
+        }
+        function cerrarImportCSV() {
+            document.getElementById('csv-modal').classList.remove('show');
+            document.getElementById('csv-textarea').value = '';
+        }
+
+        function procesarCSV() {
+            const text = document.getElementById('csv-textarea').value.trim();
+            if (!text) { showAlert('Atención', 'Pega contenido CSV.'); return; }
+            const lines = text.split(/\r?\n/);
+            const nuevos = [];
+            let startIndex = 0;
+            // Check if first line is header
+            const firstLine = lines[0].toLowerCase();
+            if (firstLine.includes('código') || firstLine.includes('codigo') || firstLine.includes('concepto')) {
+                startIndex = 1;
+            }
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = parseCSVLine(line);
+                const codigo = (cols[0]||'').trim();
+                if (!codigo) continue;
+                const esHeader = HEADER_CODES.includes(codigo.toUpperCase());
+                nuevos.push({
+                    tipo: esHeader ? 'header' : 'concepto',
+                    codigo: codigo,
+                    concepto: (cols[1]||'').trim(),
+                    unidad: (cols[2]||'').trim(),
+                    cantidad: (cols[3]||'').trim(),
+                    pu: (cols[4]||'').trim(),
+                    avance: '',
+                    importe_pagado: '',
+                    avance_real: '',
+                    observaciones: (cols[5]||'').trim()
+                });
+            }
+            if (nuevos.length === 0) { showAlert('Atención', 'No se encontraron filas válidas.'); return; }
+            if (conceptos.length > 0) {
+                if (!confirm('¿Reemplazar el catálogo actual (' + conceptos.length + ' filas) con ' + nuevos.length + ' filas nuevas?')) return;
+                conceptos = nuevos;
+            } else {
+                conceptos = nuevos;
+            }
+            cerrarImportCSV();
+            renderTabla();
+            showAlert('Importado', nuevos.length + ' filas importadas. No olvides Guardar.');
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        // Timeline
+        async function abrirTimeline(codigo) {
+            if (!codigo) { showAlert('Atención', 'El concepto no tiene código.'); return; }
+            timelineConcepto = codigo;
+            timelineIdx = 0;
+            document.getElementById('tl-code').innerText = codigo;
+            const concepto = conceptos.find(c => c.codigo === codigo);
+            document.getElementById('tl-title').innerHTML = 'Línea de tiempo - <span class="code">' + codigo + '</span>' + (concepto ? ' ' + concepto.concepto.substring(0,50) : '');
+            if (!fotosCache[codigo]) {
+                await cargarFotosConcepto(codigo);
+            }
+            renderTimeline();
+            document.getElementById('timeline-overlay').classList.add('show');
+            lucide.createIcons();
+        }
+
+        async function cargarFotosConcepto(codigo) {
+            try {
+                const doc = await db.collection("proyectos").doc(proyectoActual)
+                    .collection("presupuesto_fotos").doc(codigo).get();
+                fotosCache[codigo] = (doc.exists && doc.data().fotos) ? doc.data().fotos : [];
+            } catch (e) {
+                fotosCache[codigo] = [];
+            }
+        }
+
+        function cerrarTimeline() {
+            document.getElementById('timeline-overlay').classList.remove('show');
+            timelineConcepto = null;
+        }
+
+        function renderTimeline() {
+            const grid = document.getElementById('tl-grid');
+            const counter = document.getElementById('tl-counter');
+            const fotos = fotosCache[timelineConcepto] || [];
+            const total = fotos.length;
+            if (total === 0) {
+                grid.innerHTML = '<div class="tl-empty">No hay fotos para este concepto.<br>Agrega fotos con los botones de arriba.</div>';
+                counter.innerText = '';
+                document.getElementById('tl-prev').disabled = true;
+                document.getElementById('tl-next').disabled = true;
+                // Update photo count in table
+                renderTabla();
+                return;
+            }
+            // Show 4 photos starting at timelineIdx
+            const start = timelineIdx;
+            const end = Math.min(start + 4, total);
+            const mostradas = fotos.slice(start, end);
+            grid.innerHTML = '';
+            mostradas.forEach((foto, i) => {
+                const globalIdx = start + i;
+                const div = document.createElement('div');
+                div.className = 'tl-photo';
+                div.innerHTML = `
+                    <img src="${foto.url}" alt="Foto ${globalIdx+1}">
+                    <div class="actions">
+                        <button onclick="editarFoto(${globalIdx})" title="Reemplazar"><i data-lucide="edit"></i></button>
+                        <button onclick="eliminarFoto(${globalIdx})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    <div class="date">${formatFecha(foto.fecha_subida)}</div>
+                `;
+                grid.appendChild(div);
+            });
+            counter.innerText = `Mostrando ${start+1}-${end} de ${total} fotos`;
+            document.getElementById('tl-prev').disabled = start === 0;
+            document.getElementById('tl-next').disabled = end >= total;
+            lucide.createIcons();
+            // Update photo count in table
+            renderTabla();
+        }
+
+        function navegarTimeline(dir) {
+            const fotos = fotosCache[timelineConcepto] || [];
+            const total = fotos.length;
+            const newIdx = timelineIdx + dir * 4;
+            if (newIdx < 0) { timelineIdx = 0; }
+            else if (newIdx >= total) { timelineIdx = Math.floor((total-1)/4)*4; }
+            else { timelineIdx = newIdx; }
+            renderTimeline();
+        }
+
+        function formatFecha(ts) {
+            if (!ts) return 'Fecha no disponible';
+            try {
+                let date;
+                if (ts.toDate) date = ts.toDate();
+                else if (ts instanceof Date) date = ts;
+                else date = new Date(ts);
+                return date.toLocaleString('es-MX', {year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+            } catch(e) { return 'Fecha no disponible'; }
+        }
+
+        // Add photo from file
+        function agregarFotoDirecto(codigo) {
+            if (!codigo) return;
+            timelineConcepto = codigo;
+            document.getElementById('fileInputPhoto').onchange = function(e) {
+                procesarArchivoFoto(e.target.files[0], codigo);
+                this.value = '';
+            };
+            document.getElementById('fileInputPhoto').click();
+        }
+
+        function agregarFotoTimeline() {
+            document.getElementById('fileInputPhoto').onchange = function(e) {
+                procesarArchivoFoto(e.target.files[0], timelineConcepto);
+                this.value = '';
+            };
+            document.getElementById('fileInputPhoto').click();
+        }
+
+        async function procesarArchivoFoto(file, codigo) {
+            if (!file) return;
+            try {
+                const storageRef = storage.ref();
+                const fileRef = storageRef.child(`presupuesto_fotos/${proyectoActual}/${codigo}/${Date.now()}_${file.name}`);
+                const snapshot = await fileRef.put(file);
+                const url = await snapshot.ref.getDownloadURL();
+                await guardarFoto(codigo, url);
+            } catch (e) {
+                showAlert('Error', 'No se pudo subir la foto: ' + e.message);
+            }
+        }
+
+        async function guardarFoto(codigo, url) {
+            if (!fotosCache[codigo]) fotosCache[codigo] = [];
+            fotosCache[codigo].push({
+                url: url,
+                fecha_subida: new Date().toISOString()
+            });
+            try {
+                await db.collection("proyectos").doc(proyectoActual)
+                    .collection("presupuesto_fotos").doc(codigo)
+                    .set({ fotos: fotosCache[codigo] }, { merge: true });
+                // Jump to show the new photo
+                const total = fotosCache[codigo].length;
+                timelineIdx = Math.floor((total-1)/4)*4;
+                renderTimeline();
+            } catch (e) {
+                showAlert('Error', 'No se pudo guardar: ' + e.message);
+            }
+        }
+
+        // Camera
+        async function tomarFotoTimeline() {
+            photoCallbackMode = 'timeline';
+            await startCamera();
+        }
+
+        async function startCamera() {
+            if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
+                document.getElementById('camera-video').srcObject = currentStream;
+                document.getElementById('camera-overlay').classList.add('show');
+            } catch(e) { showAlert('Error', 'Cámara no disponible.'); }
+        }
+        function switchCamera() { currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment'; startCamera(); }
+        function closeCamera() {
+            if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
+            document.getElementById('camera-overlay').classList.remove('show');
+        }
+
+        async function captureFotoTimeline() {
+            const c = document.getElementById('tempCanvas'), v = document.getElementById('camera-video');
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            const ctx = c.getContext('2d');
+            if(currentFacingMode === 'user') { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+            ctx.drawImage(v, 0, 0, c.width, c.height); ctx.setTransform(1, 0, 0, 1, 0, 0);
+            const dataUrl = c.toDataURL('image/jpeg', 0.8);
+            closeCamera();
+            // Upload to storage
+            try {
+                const storageRef = storage.ref();
+                const fileRef = storageRef.child(`presupuesto_fotos/${proyectoActual}/${timelineConcepto}/${Date.now()}.jpg`);
+                const snapshot = await fileRef.putString(dataUrl, 'data_url');
+                const url = await snapshot.ref.getDownloadURL();
+                await guardarFoto(timelineConcepto, url);
+            } catch (e) {
+                showAlert('Error', 'No se pudo subir la foto: ' + e.message);
+            }
+        }
+
+        // Edit/Replace photo (keeps original date)
+        function editarFoto(globalIdx) {
+            const fotos = fotosCache[timelineConcepto] || [];
+            if (!fotos[globalIdx]) return;
+            document.getElementById('fileInputPhoto').onchange = async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const storageRef = storage.ref();
+                    const fileRef = storageRef.child(`presupuesto_fotos/${proyectoActual}/${timelineConcepto}/${Date.now()}_${file.name}`);
+                    const snapshot = await fileRef.put(file);
+                    const newUrl = await snapshot.ref.getDownloadURL();
+                    // Replace URL but keep original date
+                    fotos[globalIdx].url = newUrl;
+                    await db.collection("proyectos").doc(proyectoActual)
+                        .collection("presupuesto_fotos").doc(timelineConcepto)
+                        .set({ fotos: fotos }, { merge: true });
+                    renderTimeline();
+                    showAlert('Éxito', 'Foto reemplazada. La fecha original se conservó.');
+                } catch (e) {
+                    showAlert('Error', 'No se pudo reemplazar: ' + e.message);
+                }
+                this.value = '';
+            };
+            document.getElementById('fileInputPhoto').click();
+        }
+
+        async function eliminarFoto(globalIdx) {
+            if (!confirm('¿Eliminar esta foto?')) return;
+            const fotos = fotosCache[timelineConcepto] || [];
+            fotos.splice(globalIdx, 1);
+            try {
+                await db.collection("proyectos").doc(proyectoActual)
+                    .collection("presupuesto_fotos").doc(timelineConcepto)
+                    .set({ fotos: fotos }, { merge: true });
+                renderTimeline();
+            } catch (e) {
+                showAlert('Error', 'No se pudo eliminar: ' + e.message);
+            }
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
