@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -811,15 +810,27 @@ DES,Desmontajes,,,</div>
             input.value = '';
         }
 
+        // Limpia valores monetarios: quita $, comas, espacios; convierte "$-" en "0"
+        function cleanMoney(val) {
+            if (!val) return '';
+            let cleaned = val.trim().replace(/[$,\s]/g, '').replace(/￥/g, '');
+            if (cleaned === '' || cleaned === '-') return '0';
+            // Si después de limpiar no es número válido, devolver vacío
+            if (isNaN(parseFloat(cleaned))) return '';
+            return cleaned;
+        }
+
         function procesarCSV() {
             const text = document.getElementById('csv-textarea').value.trim();
-            if (!text) { showAlert('Atención', 'Pega contenido CSV.'); return; }
-            const lines = text.split(/\r?\n/);
+            if (!text) { showAlert('Atención', 'Sube o pega contenido CSV.'); return; }
+            // Quitar BOM si existe
+            const cleanText = text.replace(/^\uFEFF/, '');
+            const lines = cleanText.split(/\r?\n/);
             const nuevos = [];
             let startIndex = 0;
-            // Check if first line is header
+            // Detectar si la primera línea es encabezado
             const firstLine = lines[0].toLowerCase();
-            if (firstLine.includes('código') || firstLine.includes('codigo') || firstLine.includes('concepto')) {
+            if (firstLine.includes('código') || firstLine.includes('codigo') || firstLine.includes('concepto') || firstLine.includes('p.u') || firstLine.includes('importe')) {
                 startIndex = 1;
             }
             for (let i = startIndex; i < lines.length; i++) {
@@ -829,29 +840,65 @@ DES,Desmontajes,,,</div>
                 const codigo = (cols[0]||'').trim();
                 if (!codigo) continue;
                 const esHeader = HEADER_CODES.includes(codigo.toUpperCase());
-                nuevos.push({
-                    tipo: esHeader ? 'header' : 'concepto',
-                    codigo: codigo,
-                    concepto: (cols[1]||'').trim(),
-                    unidad: (cols[2]||'').trim(),
-                    cantidad: (cols[3]||'').trim(),
-                    pu: (cols[4]||'').trim(),
-                    avance: '',
-                    importe_pagado: '',
-                    avance_real: '',
-                    observaciones: (cols[5]||'').trim()
-                });
+
+                if (esHeader) {
+                    // Fila de partida/encabezado: solo código y concepto
+                    nuevos.push({
+                        tipo: 'header',
+                        codigo: codigo,
+                        concepto: (cols[1]||'').trim(),
+                        unidad: '', cantidad: '', pu: '',
+                        avance: '', importe_pagado: '', avance_real: '',
+                        observaciones: ''
+                    });
+                } else {
+                    // Fila de concepto: determinar columnas
+                    // El CSV puede tener 6 columnas (Código,Concepto,Unidad,Cantidad,P.U.,Importe)
+                    // o más si el concepto tiene comas sin comillas
+                    let concepto, unidad, cantidad, pu;
+                    if (cols.length >= 6) {
+                        // Si hay más de 6 columnas, el concepto se dividió por comas
+                        // Unir desde col[1] hasta col[cols.length-4] como concepto
+                        const conceptoEnd = cols.length - 4;
+                        concepto = cols.slice(1, conceptoEnd + 1).join(', ').trim();
+                        unidad = (cols[conceptoEnd + 1]||'').trim();
+                        cantidad = cleanMoney((cols[conceptoEnd + 2]||'').trim());
+                        pu = cleanMoney((cols[conceptoEnd + 3]||'').trim());
+                    } else if (cols.length >= 5) {
+                        // 5 columnas: Código,Concepto,Unidad,Cantidad,P.U.
+                        concepto = (cols[1]||'').trim();
+                        unidad = (cols[2]||'').trim();
+                        cantidad = cleanMoney((cols[3]||'').trim());
+                        pu = cleanMoney((cols[4]||'').trim());
+                    } else {
+                        // Menos de 5 columnas: intentar mapear lo que haya
+                        concepto = (cols[1]||'').trim();
+                        unidad = (cols[2]||'').trim();
+                        cantidad = cleanMoney((cols[3]||'').trim());
+                        pu = cleanMoney((cols[4]||'').trim());
+                    }
+                    nuevos.push({
+                        tipo: 'concepto',
+                        codigo: codigo,
+                        concepto: concepto,
+                        unidad: unidad,
+                        cantidad: cantidad,
+                        pu: pu,
+                        avance: '',
+                        importe_pagado: '',
+                        avance_real: '',
+                        observaciones: '' // Siempre vacío: el Importe se calcula automáticamente
+                    });
+                }
             }
             if (nuevos.length === 0) { showAlert('Atención', 'No se encontraron filas válidas.'); return; }
             if (conceptos.length > 0) {
                 if (!confirm('¿Reemplazar el catálogo actual (' + conceptos.length + ' filas) con ' + nuevos.length + ' filas nuevas?')) return;
-                conceptos = nuevos;
-            } else {
-                conceptos = nuevos;
             }
+            conceptos = nuevos;
             cerrarImportCSV();
             renderTabla();
-            showAlert('Importado', nuevos.length + ' filas importadas. No olvides Guardar.');
+            showAlert('Importado', nuevos.length + ' filas importadas. P.U. limpiado correctamente. No olvides Guardar.');
         }
 
         function parseCSVLine(line) {
