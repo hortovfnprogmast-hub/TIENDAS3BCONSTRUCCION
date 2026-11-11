@@ -1,3 +1,4 @@
+
 <style>
     /* Estilos del Menú - Colores TIENDAS 3B CONSTRUCCIÓN */
     .sidebar-nav { padding: 15px 10px; }
@@ -13,6 +14,12 @@
 </style>
 
 <nav class="sidebar-nav">
+    <!-- Inicio (siempre visible para todos los privilegios) -->
+    <div class="sidebar-section">
+        <div class="section-title">Principal</div>
+        <a href="inicio.html" class="nav-item" id="link-inicio"><i data-lucide="layout-dashboard"></i> Inicio</a>
+    </div>
+
     <!-- Privilegio 2 (Residente) -->
     <div class="sidebar-section" id="menu-mis-reportes">
         <div class="section-title">Mis Reportes</div>
@@ -26,7 +33,6 @@
         <div class="section-title">Administración</div>
         <a href="proyectos.html" class="nav-item" id="link-proyectos"><i data-lucide="folders"></i> Proyectos</a>
         <a href="proyectonuevo.html" class="nav-item" id="link-nuevo-proyecto"><i data-lucide="folder-plus"></i> Nuevo Proyecto</a>
-        <a href="asignacion.html" class="nav-item" id="link-asignacion"><i data-lucide="user-check"></i> Asignación</a>
     </div>
 
     <!-- Privilegio 1 (Administrador) -->
