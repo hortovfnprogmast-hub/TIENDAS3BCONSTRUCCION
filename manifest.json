@@ -1,0 +1,23 @@
+{
+  "name": "TIENDAS 3B CONSTRUCCIÓN",
+  "short_name": "TIENDAS 3B",
+  "description": "Sistema de Gestión de Reportes TIENDAS 3B CONSTRUCCIÓN",
+  "start_url": "https://hortovfnprogmast-hub.github.io/TIENDAS3B/index.html",
+  "display": "standalone",
+  "background_color": "#FB0317",
+  "theme_color": "#FB0317",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/wZpGz2bv/LOGOTIPO3-B192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.ibb.co/V0fYgpnk/LOGOTIPO3-B512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
