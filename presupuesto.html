@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -71,6 +70,24 @@
         .btn-icon.danger:hover { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
         .btn-icon i { width: 14px; height: 14px; }
         .photo-count { display: inline-block; background: var(--primary-blue); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+
+        /* Header form del Excel */
+        .header-form { background: white; border-radius: 12px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-blue); margin-bottom: 20px; overflow: hidden; }
+        .header-form-toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; cursor: pointer; background: var(--light-blue); font-weight: 700; color: var(--primary-blue); font-size: 14px; }
+        .header-form-toggle i { width: 20px; height: 20px; }
+        .header-form-body { padding: 20px; display: none; }
+        .header-form-body.show { display: block; }
+        .hf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .hf-col { display: flex; flex-direction: column; gap: 10px; }
+        .hf-field { display: flex; flex-direction: column; }
+        .hf-field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .hf-field input, .hf-field select { padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; font-family: inherit; color: var(--text-main); background: white; }
+        .hf-field input:focus, .hf-field select:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 2px rgba(251,3,23,0.1); }
+        .hf-field input.readonly { background: #f8fafc; color: var(--primary-blue); font-weight: 700; }
+        .hf-total-row { margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--border-color); display: flex; gap: 20px; flex-wrap: wrap; }
+        .hf-total-item { display: flex; flex-direction: column; }
+        .hf-total-item .lbl { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .hf-total-item .val { font-size: 18px; color: var(--primary-blue); font-weight: 800; }
 
         /* CSV import modal */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 20px; }
@@ -152,6 +169,185 @@
                     <button class="btn-secondary" onclick="agregarFila('concepto')"><i data-lucide="plus"></i> Agregar Concepto</button>
                     <button class="btn-secondary" onclick="agregarFila('header')"><i data-lucide="folder"></i> Agregar Partida</button>
                     <button class="btn-primary" onclick="guardarCatalogo()"><i data-lucide="save"></i> Guardar</button>
+                </div>
+
+                <!-- Formulario de encabezado del Excel -->
+                <div class="header-form" id="header-form" style="display:none;">
+                    <div class="header-form-toggle" onclick="toggleHeaderForm()">
+                        <span><i data-lucide="file-text"></i> Datos del Presupuesto (Encabezado)</span>
+                        <i data-lucide="chevron-down" id="hf-chevron"></i>
+                    </div>
+                    <div class="header-form-body" id="hf-body">
+                        <div class="hf-grid">
+                            <div class="hf-col">
+                                <div class="hf-field">
+                                    <label>Fecha elaboración</label>
+                                    <input type="date" id="hf-fecha" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>No. sitio</label>
+                                    <input type="text" id="hf-no-sitio" placeholder="Número de sitio" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Nombre sitio</label>
+                                    <input type="text" id="hf-nombre-sitio" placeholder="Nombre del sitio" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Tipo de tienda</label>
+                                    <select id="hf-tipo-tienda" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Estándar">Estándar</option>
+                                        <option value="AB">AB</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Tipo de obra</label>
+                                    <select id="hf-tipo-obra" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Obra de cero">Obra de cero</option>
+                                        <option value="Remodelación menor">Remodelación menor</option>
+                                        <option value="Remodelación mayor">Remodelación mayor</option>
+                                        <option value="Ampliación">Ampliación</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Ventilación</label>
+                                    <select id="hf-ventilacion" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Pasiva">Pasiva</option>
+                                        <option value="Forzada">Forzada</option>
+                                        <option value="Cruzada">Cruzada</option>
+                                        <option value="HVAC">HVAC / Aire acondicionado</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Media tensión</label>
+                                    <select id="hf-media-tension" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Sí">Sí</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Estacionamiento</label>
+                                    <select id="hf-estacionamiento" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Sí">Sí</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Cajones estacionamiento</label>
+                                    <input type="number" id="hf-cajones" min="0" placeholder="0" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Tipo de ubicación</label>
+                                    <select id="hf-tipo-ubicacion" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Esquina">Esquina</option>
+                                        <option value="Medianera">Medianera</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="hf-col">
+                                <div class="hf-field">
+                                    <label>Región</label>
+                                    <select id="hf-region" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Aguascalientes">Aguascalientes</option>
+                                        <option value="Atlacomulco">Atlacomulco</option>
+                                        <option value="Azcapotzalco">Azcapotzalco</option>
+                                        <option value="Celaya">Celaya</option>
+                                        <option value="Coatzacoalcos">Coatzacoalcos</option>
+                                        <option value="Ecatepec">Ecatepec</option>
+                                        <option value="El Salto">El Salto</option>
+                                        <option value="Guadalajara Norte">Guadalajara Norte</option>
+                                        <option value="Guadalajara Sur">Guadalajara Sur</option>
+                                        <option value="Ixtapaluca">Ixtapaluca</option>
+                                        <option value="León">León</option>
+                                        <option value="Los Reyes">Los Reyes</option>
+                                        <option value="Metepec">Metepec</option>
+                                        <option value="Morelia">Morelia</option>
+                                        <option value="Nextlalpan">Nextlalpan</option>
+                                        <option value="Oaxaca">Oaxaca</option>
+                                        <option value="Poza Rica">Poza Rica</option>
+                                        <option value="Puebla">Puebla</option>
+                                        <option value="Querétaro">Querétaro</option>
+                                        <option value="San Luis Potosí">San Luis Potosí</option>
+                                        <option value="Tampico">Tampico</option>
+                                        <option value="Tehuacán">Tehuacán</option>
+                                        <option value="Tepotzotlán">Tepotzotlán</option>
+                                        <option value="Tezoyuca">Tezoyuca</option>
+                                        <option value="Tláhuac">Tláhuac</option>
+                                        <option value="Toluca">Toluca</option>
+                                        <option value="Tulancingo">Tulancingo</option>
+                                        <option value="Tultitlán">Tultitlán</option>
+                                        <option value="Vallejo">Vallejo</option>
+                                        <option value="Veracruz">Veracruz</option>
+                                        <option value="Xalapa">Xalapa</option>
+                                        <option value="Yautepec">Yautepec</option>
+                                        <option value="Zacatecas">Zacatecas</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Director regional</label>
+                                    <input type="text" id="hf-director" placeholder="Nombre" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Gerente construcción</label>
+                                    <input type="text" id="hf-gerente-construccion" placeholder="Nombre" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Gerente expansión</label>
+                                    <input type="text" id="hf-gerente-expansion" placeholder="Nombre" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Coordinador de obra</label>
+                                    <input type="text" id="hf-coordinador" placeholder="Nombre" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Auxiliar de proyectos</label>
+                                    <input type="text" id="hf-auxiliar" placeholder="Nombre" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Contratista</label>
+                                    <input type="text" id="hf-contratista" placeholder="Nombre del contratista" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Mts² Piso de venta</label>
+                                    <input type="number" id="hf-mts-venta" min="0" placeholder="0" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Mts² Bodega</label>
+                                    <input type="number" id="hf-mts-bodega" min="0" placeholder="0" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Mts² Estacionamiento</label>
+                                    <input type="number" id="hf-mts-estacionamiento" min="0" placeholder="0" onchange="guardarMetadata()">
+                                </div>
+                                <div class="hf-field">
+                                    <label>Tipo de presupuesto</label>
+                                    <select id="hf-tipo-presupuesto" onchange="guardarMetadata()">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Centro">Centro</option>
+                                        <option value="Oriente">Oriente</option>
+                                        <option value="Occidente">Occidente</option>
+                                        <option value="Zona Cálida">Zona Cálida</option>
+                                        <option value="Costa Sur">Costa Sur</option>
+                                    </select>
+                                </div>
+                                <div class="hf-field">
+                                    <label>Versión</label>
+                                    <input type="text" id="hf-version" placeholder="Ej. Aug-26" onchange="guardarMetadata()">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hf-total-row">
+                            <div class="hf-total-item"><span class="lbl">Total sin IVA</span><span class="val" id="hf-total-sin-iva">$0.00</span></div>
+                            <div class="hf-total-item"><span class="lbl">IVA (16%)</span><span class="val" id="hf-iva">$0.00</span></div>
+                            <div class="hf-total-item"><span class="lbl">Total con IVA</span><span class="val" id="hf-total-con-iva">$0.00</span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="kpi-bar">
@@ -329,9 +525,12 @@ DES,Desmontajes,,,</div>
             if (proyectoActual) {
                 await cargarCatalogo();
                 await cargarFotos();
+                await cargarMetadata();
+                document.getElementById('header-form').style.display = 'block';
             } else {
                 conceptos = [];
                 renderTabla();
+                document.getElementById('header-form').style.display = 'none';
             }
         });
 
@@ -345,6 +544,77 @@ DES,Desmontajes,,,</div>
                 }
                 renderTabla();
             } catch (e) { console.error(e); conceptos = []; renderTabla(); }
+        }
+
+        async function cargarMetadata() {
+            try {
+                const doc = await db.collection("proyectos").doc(proyectoActual).get();
+                const md = (doc.exists && doc.data().presupuesto_metadata) ? doc.data().presupuesto_metadata : {};
+                const fields = ['hf-fecha','hf-no-sitio','hf-nombre-sitio','hf-tipo-tienda','hf-tipo-obra','hf-ventilacion','hf-media-tension','hf-estacionamiento','hf-cajones','hf-tipo-ubicacion','hf-region','hf-director','hf-gerente-construccion','hf-gerente-expansion','hf-coordinador','hf-auxiliar','hf-contratista','hf-mts-venta','hf-mts-bodega','hf-mts-estacionamiento','hf-tipo-presupuesto','hf-version'];
+                const keys = ['fecha','no_sitio','nombre_sitio','tipo_tienda','tipo_obra','ventilacion','media_tension','estacionamiento','cajones','tipo_ubicacion','region','director','gerente_construccion','gerente_expansion','coordinador','auxiliar','contratista','mts_venta','mts_bodega','mts_estacionamiento','tipo_presupuesto','version'];
+                fields.forEach((id, i) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = md[keys[i]] || '';
+                });
+                actualizarTotalesHeader();
+            } catch (e) { console.error(e); }
+        }
+
+        function toggleHeaderForm() {
+            const body = document.getElementById('hf-body');
+            const chevron = document.getElementById('hf-chevron');
+            body.classList.toggle('show');
+            if (body.classList.contains('show')) {
+                chevron.setAttribute('data-lucide', 'chevron-up');
+            } else {
+                chevron.setAttribute('data-lucide', 'chevron-down');
+            }
+            lucide.createIcons();
+        }
+
+        function recogerMetadata() {
+            return {
+                fecha: document.getElementById('hf-fecha').value || '',
+                no_sitio: document.getElementById('hf-no-sitio').value || '',
+                nombre_sitio: document.getElementById('hf-nombre-sitio').value || '',
+                tipo_tienda: document.getElementById('hf-tipo-tienda').value || '',
+                tipo_obra: document.getElementById('hf-tipo-obra').value || '',
+                ventilacion: document.getElementById('hf-ventilacion').value || '',
+                media_tension: document.getElementById('hf-media-tension').value || '',
+                estacionamiento: document.getElementById('hf-estacionamiento').value || '',
+                cajones: document.getElementById('hf-cajones').value || '',
+                tipo_ubicacion: document.getElementById('hf-tipo-ubicacion').value || '',
+                region: document.getElementById('hf-region').value || '',
+                director: document.getElementById('hf-director').value || '',
+                gerente_construccion: document.getElementById('hf-gerente-construccion').value || '',
+                gerente_expansion: document.getElementById('hf-gerente-expansion').value || '',
+                coordinador: document.getElementById('hf-coordinador').value || '',
+                auxiliar: document.getElementById('hf-auxiliar').value || '',
+                contratista: document.getElementById('hf-contratista').value || '',
+                mts_venta: document.getElementById('hf-mts-venta').value || '',
+                mts_bodega: document.getElementById('hf-mts-bodega').value || '',
+                mts_estacionamiento: document.getElementById('hf-mts-estacionamiento').value || '',
+                tipo_presupuesto: document.getElementById('hf-tipo-presupuesto').value || '',
+                version: document.getElementById('hf-version').value || ''
+            };
+        }
+
+        async function guardarMetadata() {
+            if (!proyectoActual) return;
+            try {
+                await db.collection("proyectos").doc(proyectoActual).update({
+                    presupuesto_metadata: recogerMetadata()
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function actualizarTotalesHeader() {
+            const { total } = calcularTotales();
+            const iva = total * 0.16;
+            const totalConIva = total + iva;
+            document.getElementById('hf-total-sin-iva').innerText = formatMoney(total);
+            document.getElementById('hf-iva').innerText = formatMoney(iva);
+            document.getElementById('hf-total-con-iva').innerText = formatMoney(totalConIva);
         }
 
         async function cargarFotos() {
@@ -465,6 +735,24 @@ DES,Desmontajes,,,</div>
             document.getElementById('kpi-paid').innerText = formatMoney(pagado);
             document.getElementById('kpi-rest').innerText = formatMoney(rest);
             document.getElementById('kpi-adv').innerText = avgAdv.toFixed(1) + '%';
+            actualizarTotalesHeader();
+        }
+
+        function calcularTotales() {
+            let total = 0, pagado = 0, avanceSum = 0;
+            let conceptCount = 0;
+            conceptos.forEach(c => {
+                if (c.tipo !== 'header') {
+                    const importe = (parseFloat(c.cantidad)||0) * (parseFloat(c.pu)||0);
+                    total += importe;
+                    pagado += parseFloat(c.importe_pagado)||0;
+                    const ar = parseFloat(c.avance_real);
+                    if (!isNaN(ar)) { avanceSum += ar; }
+                    conceptCount++;
+                }
+            });
+            const avgAdv = conceptCount > 0 ? (avanceSum / conceptCount) : 0;
+            return { total, pagado, rest: total - pagado, avgAdv };
         }
 
         function formatMoney(n) {
@@ -476,9 +764,10 @@ DES,Desmontajes,,,</div>
             try {
                 await db.collection("proyectos").doc(proyectoActual).update({
                     presupuesto_conceptos: conceptos,
+                    presupuesto_metadata: recogerMetadata(),
                     presupuesto_fecha_actualizacion: new Date().toISOString()
                 });
-                showAlert('Éxito', 'Catálogo guardado correctamente.');
+                showAlert('Éxito', 'Catálogo y datos de encabezado guardados correctamente.');
             } catch (e) {
                 showAlert('Error', 'No se pudo guardar: ' + e.message);
             }
