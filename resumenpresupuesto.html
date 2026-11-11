@@ -156,7 +156,7 @@
                         <div id="datos-proyecto"><div class="datos-row"><span class="label">Selecciona un proyecto</span><span class="value">...</span></div></div>
                     </div>
                     <div class="datos-card">
-                        <h3><i data-lucide="users"></i> Equipo Responsable</h3>
+                        <h3><i data-lucide="users"></i> Equipo y Región</h3>
                         <div id="datos-equipo"><div class="datos-row"><span class="label">-</span><span class="value">-</span></div></div>
                     </div>
                     <div class="datos-card">
@@ -283,22 +283,29 @@
         }
 
         function renderDatosGenerales(p) {
+            const md = p.presupuesto_metadata || {};
             const html = `
-                <div class="datos-row"><span class="label">Sitio</span><span class="value">${p.proyecto||'-'}</span></div>
-                <div class="datos-row"><span class="label">Cliente</span><span class="value">${p.cliente||'-'}</span></div>
-                <div class="datos-row"><span class="label">Contrato/OC</span><span class="value">${p.numero_documento||'-'}</span></div>
-                <div class="datos-row"><span class="label">Fecha inicio</span><span class="value">${p.fecha_inicio||'-'}</span></div>
-                <div class="datos-row"><span class="label">Fecha término</span><span class="value">${p.fecha_termino||'-'}</span></div>
-                <div class="datos-row"><span class="label">Dirección</span><span class="value" style="text-align:right;max-width:60%;word-wrap:break-word;">${p.direccion_completa||'-'}</span></div>
+                <div class="datos-row"><span class="label">No. sitio</span><span class="value">${md.no_sitio || '-'}</span></div>
+                <div class="datos-row"><span class="label">Nombre sitio</span><span class="value">${md.nombre_sitio || p.proyecto || '-'}</span></div>
+                <div class="datos-row"><span class="label">Fecha elaboración</span><span class="value">${md.fecha || '-'}</span></div>
+                <div class="datos-row"><span class="label">Tipo de tienda</span><span class="value">${md.tipo_tienda || '-'}</span></div>
+                <div class="datos-row"><span class="label">Tipo de obra</span><span class="value">${md.tipo_obra || '-'}</span></div>
+                <div class="datos-row"><span class="label">Ventilación</span><span class="value">${md.ventilacion || '-'}</span></div>
+                <div class="datos-row"><span class="label">Media tensión</span><span class="value">${md.media_tension || '-'}</span></div>
+                <div class="datos-row"><span class="label">Estacionamiento</span><span class="value">${md.estacionamiento || '-'} (${md.cajones || 0} cajones)</span></div>
+                <div class="datos-row"><span class="label">Tipo de ubicación</span><span class="value">${md.tipo_ubicacion || '-'}</span></div>
+                <div class="datos-row"><span class="label">Mts² venta / bodega / est.</span><span class="value">${md.mts_venta || 0} / ${md.mts_bodega || 0} / ${md.mts_estacionamiento || 0}</span></div>
             `;
             document.getElementById('datos-proyecto').innerHTML = html;
-            // Equipo responsable - these fields don't exist yet in the project doc
-            // But we can show project creation date
             const equipo = `
-                <div class="datos-row"><span class="label">Creado</span><span class="value">${p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString('es-MX') : '-'}</span></div>
-                <div class="datos-row"><span class="label">Actualizado</span><span class="value">${p.presupuesto_fecha_actualizacion ? new Date(p.presupuesto_fecha_actualizacion).toLocaleDateString('es-MX') : '-'}</span></div>
-                <div class="datos-row"><span class="label">Total conceptos</span><span class="value">${conceptos.filter(c=>c.tipo!=='header').length}</span></div>
-                <div class="datos-row"><span class="label">Total partidas</span><span class="value">${conceptos.filter(c=>c.tipo==='header').length}</span></div>
+                <div class="datos-row"><span class="label">Región</span><span class="value">${md.region || '-'}</span></div>
+                <div class="datos-row"><span class="label">Director regional</span><span class="value">${md.director || '-'}</span></div>
+                <div class="datos-row"><span class="label">Gerente construcción</span><span class="value">${md.gerente_construccion || '-'}</span></div>
+                <div class="datos-row"><span class="label">Gerente expansión</span><span class="value">${md.gerente_expansion || '-'}</span></div>
+                <div class="datos-row"><span class="label">Coordinador de obra</span><span class="value">${md.coordinador || '-'}</span></div>
+                <div class="datos-row"><span class="label">Auxiliar de proyectos</span><span class="value">${md.auxiliar || '-'}</span></div>
+                <div class="datos-row"><span class="label">Contratista</span><span class="value">${md.contratista || '-'}</span></div>
+                <div class="datos-row"><span class="label">Versión</span><span class="value">${md.version || '-'}</span></div>
             `;
             document.getElementById('datos-equipo').innerHTML = equipo;
         }
