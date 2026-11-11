@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -388,13 +389,23 @@
     <div class="modal-overlay" id="csv-modal">
         <div class="modal-box">
             <h2>Importar Catálogo desde CSV</h2>
-            <p>Pega aquí el contenido de tu archivo CSV (delimitado por comas). Las filas cuyo código sea PRE, DES, DEM, TER, CIM, EST, ALB, ACA, HER, CAN, CAR, ALU, ELEC, CCTV, VEN, IHS, VAR, EXT o LIM se crearán automáticamente como encabezados de partida.</p>
+            <p>Selecciona un archivo CSV desde tu computadora o pega el contenido manualmente. Las filas cuyo código sea PRE, DES, DEM, TER, CIM, EST, ALB, ACA, HER, CAN, CAR, ALU, ELEC, CCTV, VEN, IHS, VAR, EXT o LIM se crearán automáticamente como encabezados de partida.</p>
+
+            <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+                <button class="btn-primary" onclick="document.getElementById('fileInputCSVModal').click()" style="padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+                    <i data-lucide="file-up"></i> Subir archivo CSV
+                </button>
+                <span id="csv-filename" style="align-self:center;color:var(--text-muted);font-size:13px;"></span>
+            </div>
+            <input type="file" id="fileInputCSVModal" accept=".csv,text/csv,text/plain" style="display:none" onchange="cargarArchivoCSV(this)">
+
             <div class="format-example">Formato esperado (con encabezado):
 Código,Concepto,Unidad,Cantidad,P.U.,Observaciones
 PRE,Preeliminares,,,
 T - PRE 01,Trazo y nivelación manual...,M2,340,12.49,
 T - PRE 02,Trazo y nivelación con equipo topográfico...,M2,340,12.49,
 DES,Desmontajes,,,</div>
+            <p style="font-size:12px;color:var(--text-muted);margin:10px 0 5px 0;">O pega el contenido aquí:</p>
             <textarea id="csv-textarea" placeholder="Código,Concepto,Unidad,Cantidad,P.U.,Observaciones&#10;PRE,Preeliminares,,,&#10;T - PRE 01,Trazo y nivelación...,M2,340,12.49,"></textarea>
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="cerrarImportCSV()">Cancelar</button>
@@ -782,6 +793,22 @@ DES,Desmontajes,,,</div>
         function cerrarImportCSV() {
             document.getElementById('csv-modal').classList.remove('show');
             document.getElementById('csv-textarea').value = '';
+            document.getElementById('csv-filename').innerText = '';
+        }
+
+        function cargarArchivoCSV(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            document.getElementById('csv-filename').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('csv-textarea').value = e.target.result;
+            };
+            reader.onerror = function() {
+                showAlert('Error', 'No se pudo leer el archivo.');
+            };
+            reader.readAsText(file);
+            input.value = '';
         }
 
         function procesarCSV() {
